@@ -1,22 +1,23 @@
-#ifndef NO_H
-#define NO_H
+#ifndef __NO_H__
+#define __NO_H__
 
-#include <string>
 #include <vector>
+
 #include "Aresta.h"
 
-
-using namespace std;
 class No {
-public:
-    No();
-    ~No();
+    public:
+        inline No() {};
 
-    char id;
-    int peso;
-    vector<Aresta*> arestas;
+        inline ~No() {
+            for (auto aresta : arestas) {
+                delete aresta;
+            }
+        };
+
+        char id;
+        int peso;
+        std::vector<Aresta *> arestas;
 };
 
-
-
-#endif //NO_H
+#endif

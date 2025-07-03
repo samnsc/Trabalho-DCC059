@@ -1,17 +1,13 @@
-#ifndef ARESTA_H
-#define ARESTA_H
+#ifndef __ARESTA_H__
+#define __ARESTA_H__
 
-using namespace std;
 class Aresta {
-public:
-    Aresta();
-    ~Aresta();
+    public:
+        inline Aresta() {};
+        inline ~Aresta() {};
 
-    char id_no_alvo;
-    int peso;
-    
+        char id_no_alvo;
+        int peso;
 };
 
-
-
-#endif //ARESTA_H
+#endif
