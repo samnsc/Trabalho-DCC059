@@ -1,23 +1,25 @@
 #ifndef __NO_H__
 #define __NO_H__
 
+#include <memory>
 #include <vector>
 
 #include "Aresta.h"
 
 class No {
     public:
-        inline No() {};
+        No(char id, int peso);
 
-        inline ~No() {
-            for (auto aresta : arestas) {
-                delete aresta;
-            }
-        };
+        void createEdge(char destination_id, int weight);
 
-        char id;
-        int peso;
-        std::vector<Aresta *> arestas;
+        char getId() const;
+        int getPeso() const;
+        const std::vector<std::unique_ptr<Aresta>>& getArestas() const;
+
+    private:
+        const char ID;
+        const int PESO;
+        std::vector<std::unique_ptr<Aresta>> arestas;
 };
 
 #endif

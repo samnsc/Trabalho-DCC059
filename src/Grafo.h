@@ -1,19 +1,23 @@
 #ifndef __GRAFO_H__
 #define __GRAFO_H__
 
+#include <map>
+#include <memory>
 #include <vector>
 
 #include "No.h"
 
 class Grafo {
     public:
-        inline Grafo() {};
+        Grafo(bool is_directed, bool has_weighted_edges, bool has_weighted_nodes);
 
-        inline ~Grafo() {
-            for (auto vector : lista_adj) {
-                delete vector;
-            }
-        };
+        void createNode(char id, int weight = 0);
+        void createEdge(char starting_id, char destination_id, int weight = 0);
+
+        const std::map<char, std::unique_ptr<No>>& getListaDeAdjacencia() const;
+        int getOrdem() const;
+
+        void printGraph() const;
 
         std::vector<char> fechoTransitivoDireto(char id_no);                  // a
         std::vector<char> fechoTransitivoIndireto(char id_no);                // b
@@ -22,16 +26,19 @@ class Grafo {
         Grafo* arvoreGeradoraMinimaPrim(std::vector<char> ids_nos);           // e
         Grafo* arvoreGeradoraMinimaKruskal(std::vector<char> ids_nos);        // f
         Grafo* arvoreCaminhamentoProfundidade(char id_no);                    // g
-        int raio();                                                           // h 1
-        int diametro();                                                       // h 2
-        std::vector<char> centro();                                           // h 3
-        std::vector<char> periferia();                                        // h 4
 
+        int raio();                     // h 1
+        int diametro();                 // h 2
+        std::vector<char> centro();     // h 3
+        std::vector<char> periferia();  // h 4
+
+    private:
+        const bool IN_DIRECIONADO;
+        const bool IN_PONDERADO_ARESTA;
+        const bool IN_PONDERADO_VERTICE;
+
+        std::map<char, std::unique_ptr<No>> lista_adj;
         int ordem;
-        bool in_direcionado;
-        bool in_ponderado_aresta;
-        bool in_ponderado_vertice;
-        std::vector<No*> lista_adj;
 };
 
 #endif

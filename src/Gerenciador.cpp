@@ -1,9 +1,14 @@
 #include "Gerenciador.h"
 
 #include <algorithm>
+#include <array>
+#include <fstream>
 #include <iostream>
+#include <vector>
 
-void Gerenciador::comandos(Grafo* grafo) {
+#include "Grafo.h"
+
+void Gerenciador::comandos(std::unique_ptr<Grafo> grafo) {
     std::cout << "Digite uma das opcoes abaixo e pressione enter:" << std::endl
               << std::endl;
     std::cout << "(a) Fecho transitivo direto de um no;" << std::endl;
@@ -82,8 +87,8 @@ void Gerenciador::comandos(Grafo* grafo) {
                 std::cout << "Digite o tamanho do subconjunto: ";
                 std::cin >> tam;
 
-                if (tam > 0 && tam <= grafo->ordem) {
-                    std::vector<char> ids = getConjuntoIds(grafo, tam);
+                if (tam > 0 && tam <= grafo->getOrdem()) {
+                    std::vector<char> ids = getConjuntoIds(*grafo, tam);
                     Grafo* arvore_geradora_minima_prim = grafo->arvoreGeradoraMinimaPrim(ids);
                     std::cout << "Metodo de impressao em tela nao implementado" << std::endl
                               << std::endl;
@@ -106,8 +111,8 @@ void Gerenciador::comandos(Grafo* grafo) {
                 std::cout << "Digite o tamanho do subconjunto: ";
                 std::cin >> tam;
 
-                if (tam > 0 && tam <= grafo->ordem) {
-                    std::vector<char> ids = getConjuntoIds(grafo, tam);
+                if (tam > 0 && tam <= grafo->getOrdem()) {
+                    std::vector<char> ids = getConjuntoIds(*grafo, tam);
                     Grafo* arvore_geradora_minima_kruskal = grafo->arvoreGeradoraMinimaKruskal(ids);
                     std::cout << "Metodo de impressao em tela nao implementado" << std::endl
                               << std::endl;
@@ -164,7 +169,7 @@ void Gerenciador::comandos(Grafo* grafo) {
             }
     }
 
-    comandos(grafo);
+    comandos(std::move(grafo));
 }
 
 char Gerenciador::getIdEntrada() {
@@ -175,13 +180,13 @@ char Gerenciador::getIdEntrada() {
     return id;
 }
 
-std::vector<char> Gerenciador::getConjuntoIds(Grafo* grafo, int tam) {
+std::vector<char> Gerenciador::getConjuntoIds(const Grafo& grafo, int tam) {
     std::vector<char> ids = {};
     while ((int) ids.size() < tam) {
         char id_no = getIdEntrada();
         bool existe = false;
-        for (No* no : grafo->lista_adj) {
-            if (no->id == id_no) {
+        for (auto& no : grafo.getListaDeAdjacencia()) {
+            if (no.first == id_no) {
                 existe = true;
                 break;
             }
@@ -219,4 +224,107 @@ bool Gerenciador::perguntaImprimirArquivo(std::string nome_arquivo) {
             std::cout << "Resposta invalida" << std::endl;
             return perguntaImprimirArquivo(nome_arquivo);
     }
+}
+
+// receives the name of the file to be read as it's only parameters,
+// returns a null unique_ptr if the provided filename doesn't point to a valid file,
+// otherwise returns an unique_ptr to a new graph initialized with the parameters given in that file
+std::unique_ptr<Grafo> Gerenciador::lerArquivo(const std::string& nome_arquivo) {
+    std::ifstream file_reader{nome_arquivo};
+
+    if (!file_reader.is_open()) {
+        file_reader.close();
+        return std::unique_ptr<Grafo>{};
+    }
+
+    std::string header;
+    std::getline(file_reader, header);
+
+    std::array<bool, 3> header_data;
+
+    for (int i = 0; i < 3; i++) {
+        int delimiter_position = header.find(" ");
+
+        std::string token = header.substr(0, delimiter_position);
+        header_data[i] = token == "1" ? true : false;
+
+        header.erase(0, delimiter_position + 1);  // +1 to also remove the delimiter
+    }
+
+    auto graph = std::unique_ptr<Grafo>{new Grafo{header_data[0], header_data[1], header_data[2]}};
+
+    std::string node_amount_string;
+    std::getline(file_reader, node_amount_string);
+    int node_amount;
+    try {
+        node_amount = std::stoi(node_amount_string);
+    } catch (const std::exception& exception) {
+        return std::unique_ptr<Grafo>{};
+    }
+
+    for (int i = 0; i < node_amount; i++) {
+        std::string node_information;
+        std::getline(file_reader, node_information);
+
+        if (!header_data[2]) {                     // different operations in case of a graph with weighted node
+            if (node_information.length() != 1) {  // the node_id can only be made-up of one char
+                return std::unique_ptr<Grafo>{};
+            }
+
+            graph->createNode(node_information[0]);
+        } else {
+            int delimiter_position = node_information.find(" ");
+
+            std::string node_id = node_information.substr(0, delimiter_position);
+            node_information.erase(0, delimiter_position + 1);  // +1 to also remove the delimiter
+
+            if (node_id.length() != 1) {  // the node_id can only be made-up of one char
+                return std::unique_ptr<Grafo>{};
+            }
+
+            try {
+                graph->createNode(node_id[0], std::stoi(node_information));  // after erasure, the only information left in node_information should be the weight
+            } catch (const std::exception& exception) {
+                return std::unique_ptr<Grafo>{};
+            }
+        }
+    }
+
+    std::string edge_information;
+    while (std::getline(file_reader, edge_information)) {  // will loop until the end of the file
+        int starting_node_delimiter_position = edge_information.find(" ");
+        std::string starting_node = edge_information.substr(0, starting_node_delimiter_position);
+        edge_information.erase(0, starting_node_delimiter_position + 1);  // +1 to also remove the delimiter
+
+        if (starting_node.length() != 1) {  // the node_id can only be made-up of one char
+            return std::unique_ptr<Grafo>{};
+        }
+
+        if (!header_data[1]) {                     // different operations in case of a graph with weighted edges
+            if (edge_information.length() != 1) {  // the node_id can only be made-up of one char
+                return std::unique_ptr<Grafo>{};
+            }
+
+            graph->createEdge(starting_node[0], edge_information[0]);  // after erasure, the only information left in edge_information should be the ending_node
+        } else {
+            int ending_node_delimiter_position = edge_information.find(" ");
+            std::string ending_node = edge_information.substr(0, ending_node_delimiter_position);
+            edge_information.erase(0, ending_node_delimiter_position + 1);  // +1 to also remove the delimiter
+
+            if (ending_node.length() != 1) {  // the node_id can only be made-up of one char
+                return std::unique_ptr<Grafo>{};
+            }
+
+            try {
+                graph->createEdge(starting_node[0], ending_node[0], std::stoi(edge_information));  // after erasure, the only information left in edge_information should be the weight
+            } catch (const std::exception& exception) {
+                return std::unique_ptr<Grafo>{};
+            }
+        }
+    }
+
+    graph->printGraph();
+
+    file_reader.close();
+    return std::move(graph);
 }
