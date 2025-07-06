@@ -29,12 +29,27 @@ void Gerenciador::comandos(std::unique_ptr<Grafo> grafo) {
             {
                 char id_no = getIdEntrada();
                 std::vector<char> fecho_transitivo_direto = grafo->fechoTransitivoDireto(id_no);
-                std::cout << "Metodo de impressao em tela nao implementado" << std::endl
-                          << std::endl;
+
+                if (fecho_transitivo_direto.size() > 0) {
+                    std::cout << fecho_transitivo_direto[0];
+                    for (int i = 1; i < fecho_transitivo_direto.size(); i++) {
+                        std::cout << "," << fecho_transitivo_direto[i];
+                    }
+                }
+                std::cout << "\n";
 
                 if (perguntaImprimirArquivo("fecho_trans_dir.txt")) {
-                    std::cout << "Metodo de impressao em arquivo nao implementado" << std::endl
-                              << std::endl;
+                    std::ofstream file_writer{"fecho_trans_dir.txt"};
+
+                    if (fecho_transitivo_direto.size() > 0) {
+                        file_writer << fecho_transitivo_direto[0];
+                        for (int i = 1; i < fecho_transitivo_direto.size(); i++) {
+                            file_writer << "," << fecho_transitivo_direto[i];
+                        }
+                    }
+                    file_writer << "\n";
+
+                    file_writer.close();
                 }
 
                 break;
@@ -43,14 +58,29 @@ void Gerenciador::comandos(std::unique_ptr<Grafo> grafo) {
             {
                 char id_no = getIdEntrada();
                 std::vector<char> fecho_transitivo_indireto = grafo->fechoTransitivoIndireto(id_no);
-                std::cout << "Metodo de impressao em tela nao implementado" << std::endl
-                          << std::endl;
+
+                if (fecho_transitivo_indireto.size() > 0) {
+                    std::cout << fecho_transitivo_indireto[0];
+                    for (int i = 1; i < fecho_transitivo_indireto.size(); i++) {
+                        std::cout << "," << fecho_transitivo_indireto[i];
+                    }
+                }
+                std::cout << "\n";
 
                 if (perguntaImprimirArquivo("fecho_trans_indir.txt")) {
-                    std::cout << "Metodo de impressao em arquivo nao implementado" << std::endl;
+                    std::ofstream file_writer{"fecho_trans_indir.txt"};
+
+                    if (fecho_transitivo_indireto.size() > 0) {
+                        file_writer << fecho_transitivo_indireto[0];
+                        for (int i = 1; i < fecho_transitivo_indireto.size(); i++) {
+                            file_writer << "," << fecho_transitivo_indireto[i];
+                        }
+                    }
+                    file_writer << "\n";
+
+                    file_writer.close();
                 }
 
-                ;
                 break;
             }
         case 'c':
@@ -322,8 +352,6 @@ std::unique_ptr<Grafo> Gerenciador::lerArquivo(const std::string& nome_arquivo) 
             }
         }
     }
-
-    graph->printGraph();
 
     file_reader.close();
     return std::move(graph);

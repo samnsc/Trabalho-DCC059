@@ -93,14 +93,85 @@ void Grafo::printGraph() const {
     }
 }
 
-std::vector<char> Grafo::fechoTransitivoDireto(char id_no) {
-    std::cout << "Metodo nao implementado" << std::endl;
-    return {};
+std::vector<char> Grafo::fechoTransitivoDireto(char id_no) const {
+    if (this->lista_adj.find(id_no) == this->lista_adj.end()) {
+        throw std::runtime_error("Tried getting the direct transitive closure for an inexistent node.\n");
+    }
+
+    std::vector<char> direct_transitive_closure;
+    const auto &node = this->lista_adj.at(id_no);
+
+    this->directTransitiveClosureHelper(node, direct_transitive_closure);
+
+    return direct_transitive_closure;
 }
 
-std::vector<char> Grafo::fechoTransitivoIndireto(char id_no) {
-    std::cout << "Metodo nao implementado" << std::endl;
-    return {};
+void Grafo::directTransitiveClosureHelper(const std::unique_ptr<No> &node, std::vector<char> &direct_transitive_closure) const {
+    for (const auto &edge : node->getArestas()) {
+        // to prevent an infinite loop we check if the current node is already part of the closure, if it is we won't search it since it was already searched
+        if (std::find(direct_transitive_closure.begin(), direct_transitive_closure.end(), edge->getIdNoAlvo()) == direct_transitive_closure.end()) {
+            direct_transitive_closure.push_back(edge->getIdNoAlvo());
+            this->directTransitiveClosureHelper(this->lista_adj.at(edge->getIdNoAlvo()), direct_transitive_closure);
+        }
+    }
+}
+
+std::vector<char> Grafo::fechoTransitivoIndireto(char id_no) const {
+    if (this->lista_adj.find(id_no) == this->lista_adj.end()) {
+        throw std::runtime_error("Tried getting the indirect transitive closure for an inexistent node.\n");
+    }
+
+    std::vector<char> indirect_transitive_closure;
+    std::vector<char> cant_reach_target_node;
+
+    for (const auto &node : this->lista_adj) {
+        std::vector<char> scoured_nodes;
+
+        if (
+            std::find(indirect_transitive_closure.begin(), indirect_transitive_closure.end(), node.first) != indirect_transitive_closure.end() ||  // checks if the current node has already been found to be able to reach the target node
+            std::find(cant_reach_target_node.begin(), cant_reach_target_node.end(), node.first) != cant_reach_target_node.end()                    // checks if the current node has already been found to *NOT* be able to reach the target node
+        ) {
+            continue;
+        }
+
+        bool reachable = indirectTransitiveClosureHelper(id_no, node.second, indirect_transitive_closure, cant_reach_target_node, scoured_nodes);
+
+        if (reachable) {
+            indirect_transitive_closure.insert(indirect_transitive_closure.end(), scoured_nodes.cbegin(), scoured_nodes.cend());
+        } else {
+            cant_reach_target_node.insert(cant_reach_target_node.end(), scoured_nodes.cbegin(), scoured_nodes.cend());
+        }
+    }
+
+    return indirect_transitive_closure;
+}
+
+bool Grafo::indirectTransitiveClosureHelper(char target_node_id, const std::unique_ptr<No> &current_node, const std::vector<char> &indirect_transitive_closure, const std::vector<char> &cant_reach_target_node, std::vector<char> &scoured_nodes) const {
+    scoured_nodes.push_back(current_node->getId());
+
+    for (const auto &edge : current_node->getArestas()) {
+        if (
+            edge->getIdNoAlvo() == target_node_id ||
+            std::find(indirect_transitive_closure.begin(), indirect_transitive_closure.end(), edge->getIdNoAlvo()) != indirect_transitive_closure.end()  // checks if the simbling node has already been found to be able to reach the target node
+        ) {
+            return true;
+        }
+
+        if (
+            std::find(scoured_nodes.begin(), scoured_nodes.end(), edge->getIdNoAlvo()) != scoured_nodes.end() ||                          // checks if the sibling node has already been searched
+            std::find(cant_reach_target_node.begin(), cant_reach_target_node.end(), edge->getIdNoAlvo()) != cant_reach_target_node.end()  // checks if the simbling node has already been found to *NOT* be able to reach the target node
+        ) {
+            continue;
+        }
+
+        bool reachable = this->indirectTransitiveClosureHelper(target_node_id, this->lista_adj.at(edge->getIdNoAlvo()), indirect_transitive_closure, cant_reach_target_node, scoured_nodes);
+
+        if (reachable) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 std::vector<char> Grafo::caminhoMinimoDijkstra(char id_no_a, char id_no_b) {
