@@ -45,7 +45,7 @@ class Grafo {
 
         void directTransitiveClosureHelper(const std::unique_ptr<No>& node, std::vector<char>& direct_transitive_closure) const;
         bool indirectTransitiveClosureHelper(char target_node_id, const std::unique_ptr<No>& current_node, const std::vector<char>& indirect_transitive_closure, const std::vector<char>& cant_reach_target_node, std::vector<char>& scoured_nodes) const;
-        void dijkstraShortestPathHelper(const No& current_node, int summed_distance, std::vector<std::tuple<char, int, bool>>& distance_to_node, std::vector<char> path, std::map<char, std::vector<char>>& path_to_char) const;
+        void dijkstraShortestPathHelper(const std::tuple<char, int, bool, std::vector<char>>& current_node, int summed_distance, std::vector<std::tuple<char, int, bool, std::vector<char>>>& distance_to_node) const;
         std::vector<std::tuple<char, int, char, int, int>> getEdges(const std::vector<char>& node_ids) const;
 };
 

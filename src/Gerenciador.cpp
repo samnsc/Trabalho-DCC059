@@ -168,7 +168,6 @@ void Gerenciador::comandos(std::unique_ptr<Grafo> grafo) {
 
                         file_writer.close();
                     }
-
                 } else {
                     std::cout << "Valor invalido" << std::endl;
                 }

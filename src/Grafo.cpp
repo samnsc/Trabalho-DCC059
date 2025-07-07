@@ -217,47 +217,52 @@ std::vector<char> Grafo::caminhoMinimoDijkstra(char id_no_a, char id_no_b) const
     }
 
     // stores tuples in the following format:
-    // node id, current distance, has been travelled to
-    std::vector<std::tuple<char, int, bool>> distance_to_node;
+    // node id, current distance, has been travelled to, current path
+    std::vector<std::tuple<char, int, bool, std::vector<char>>> distance_to_node;
 
     for (const auto &node : this->lista_adj) {
-        distance_to_node.push_back({node.first, std::numeric_limits<int>::max(), false});  // since the distance is being stored as an int there is no concept of infinity, so the maximum number an int can store is used instead
+        distance_to_node.push_back({node.first, std::numeric_limits<int>::max(), false, {}});  // since the distance is being stored as an int there is no concept of infinity, so the maximum number an int can store is used instead
     }
 
     // set the starting node distance to 0
     auto starting_node_iterator = std::find_if(  // searches for the iterator pointing to the starting node
         distance_to_node.begin(),
         distance_to_node.end(),
-        [&id_no_a](const std::tuple<char, int, bool> &tuple) { return std::get<0>(tuple) == id_no_a; }
+        [&id_no_a](const std::tuple<char, int, bool, std::vector<char>> &tuple) { return std::get<0>(tuple) == id_no_a; }
     );
     std::get<1>(*starting_node_iterator) = 0;
     std::get<2>(*starting_node_iterator) = true;
+    std::get<3>(*starting_node_iterator) = {id_no_a};
 
-    std::map<char, std::vector<char>> path_to_char;
-    this->dijkstraShortestPathHelper(*this->lista_adj.at(id_no_a), 0, distance_to_node, {}, path_to_char);
+    this->dijkstraShortestPathHelper(*starting_node_iterator, 0, distance_to_node);
 
-    if (path_to_char.find(id_no_b) != path_to_char.end()) {  // if there are no possible paths between the two given nodes an empty vector is returned
-        return path_to_char[id_no_b];
+    auto destination_node_iterator = std::find_if(  // searches for the iterator pointing to the starting node
+        distance_to_node.begin(),
+        distance_to_node.end(),
+        [&id_no_b](const std::tuple<char, int, bool, std::vector<char>> &tuple) { return std::get<0>(tuple) == id_no_b; }
+    );
+    if (destination_node_iterator != distance_to_node.end()) {  // if there are no possible paths between the two given nodes an empty vector is returned
+        return std::get<3>(*destination_node_iterator);
     } else {
         return {};
     }
 }
 
-void Grafo::dijkstraShortestPathHelper(const No &current_node, int summed_distance, std::vector<std::tuple<char, int, bool>> &distance_to_node, std::vector<char> path, std::map<char, std::vector<char>> &path_to_char) const {
-    path.push_back(current_node.getId());
-    path_to_char[current_node.getId()] = path;  // whenever a node is selected by the dijkstra algorithm it can be guaranteed to have gone through the shortest possible path at that time, if it's selected twice its because in the next instance the path will always be shorter than in the previous one
-
+void Grafo::dijkstraShortestPathHelper(const std::tuple<char, int, bool, std::vector<char>> &current_node, int summed_distance, std::vector<std::tuple<char, int, bool, std::vector<char>>> &distance_to_node) const {
     // setting the distances relative to the current node
-    for (const auto &edge : current_node.getArestas()) {
+    for (const auto &edge : this->lista_adj.at(std::get<0>(current_node))->getArestas()) {
         auto iterator = std::find_if(  // searches for the iterator pointing to the node the edge points to
             distance_to_node.begin(),
             distance_to_node.end(),
-            [&edge](const std::tuple<char, int, bool> &tuple) { return std::get<0>(tuple) == edge->getIdNoAlvo(); }
+            [&edge](const std::tuple<char, int, bool, std::vector<char>> &tuple) { return std::get<0>(tuple) == edge->getIdNoAlvo(); }
         );
 
         if ((edge->getPeso() + summed_distance) < std::get<1>(*iterator)) {  // will only change the distance value if the sum is smaller than the already stored distance
             std::get<1>(*iterator) = edge->getPeso() + summed_distance;
             std::get<2>(*iterator) = false;  // sets the travelled indicator to false, if it wasn't already set to that, signaling that it can go through that node again
+
+            std::get<3>(*iterator).assign(std::get<3>(current_node).begin(), std::get<3>(current_node).end());
+            std::get<3>(*iterator).push_back(std::get<0>(*iterator));
         }
     }
 
@@ -265,24 +270,20 @@ void Grafo::dijkstraShortestPathHelper(const No &current_node, int summed_distan
     std::sort(
         distance_to_node.begin(),
         distance_to_node.end(),
-        [](const std::tuple<char, int, bool> &first, const std::tuple<char, int, bool> &second) {
+        [](const std::tuple<char, int, bool, std::vector<char>> &first, const std::tuple<char, int, bool, std::vector<char>> &second) {
             return std::get<1>(first) < std::get<1>(second);
         }
     );
 
     for (auto &next_node : distance_to_node) {
-        if (
-            !std::get<2>(next_node) &&  // checks if the node has already been travelled to
-            std::find_if(               // checks if the node is a sibling of the current node, if it's not the path vector won't be setup correctly so it recursively goes back until the closest relative to it selects it
-                current_node.getArestas().begin(),
-                current_node.getArestas().end(),
-                [&next_node](const std::unique_ptr<Aresta> &edge) {
-                    return edge->getIdNoAlvo() == std::get<0>(next_node);
-                }
-            ) != current_node.getArestas().end()
-        ) {
+        if (!std::get<2>(next_node)) {                                        // checks if the node has already been travelled to
+            if (std::get<1>(next_node) >= std::numeric_limits<int>::max()) {  // checks if the node's distance is smaller than the int maximum (in this case representing infinity), if it isn't,
+                break;                                                        // that means that this graph isn't connected and it has reached all nodes that the starting node is connected to
+            }
+
             std::get<2>(next_node) = true;
-            this->dijkstraShortestPathHelper(*this->lista_adj.at(std::get<0>(next_node)), std::get<1>(next_node), distance_to_node, path, path_to_char);
+            this->dijkstraShortestPathHelper(next_node, std::get<1>(next_node), distance_to_node);
+            break;
         }
     }
 }
@@ -339,8 +340,9 @@ std::unique_ptr<Grafo> Grafo::arvoreGeradoraMinimaKruskal(std::vector<char> ids_
             graph->createNode(std::get<2>(edge), std::get<3>(edge));
         }
 
-        auto direct_transitive_closure = graph->fechoTransitivoDireto(std::get<0>(edge));
-        if (std::find(direct_transitive_closure.begin(), direct_transitive_closure.end(), std::get<2>(edge)) == direct_transitive_closure.end()) {
+        auto minimum_path = graph->caminhoMinimoDijkstra(std::get<0>(edge), std::get<2>(edge));
+
+        if (minimum_path.empty()) {
             graph->createEdge(std::get<0>(edge), std::get<2>(edge), std::get<4>(edge));
         }
     }
