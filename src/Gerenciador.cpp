@@ -88,11 +88,27 @@ void Gerenciador::comandos(std::unique_ptr<Grafo> grafo) {
                 char id_no_1 = getIdEntrada();
                 char id_no_2 = getIdEntrada();
                 std::vector<char> caminho_minimo_dijkstra = grafo->caminhoMinimoDijkstra(id_no_1, id_no_2);
-                std::cout << "Metodo de impressao em tela nao implementado" << std::endl
-                          << std::endl;
+
+                if (caminho_minimo_dijkstra.size() > 0) {
+                    std::cout << caminho_minimo_dijkstra[0];
+                    for (int i = 1; i < caminho_minimo_dijkstra.size(); i++) {
+                        std::cout << "," << caminho_minimo_dijkstra[i];
+                    }
+                }
+                std::cout << "\n";
 
                 if (perguntaImprimirArquivo("caminho_minimo_dijkstra.txt")) {
-                    std::cout << "Metodo de impressao em arquivo nao implementado" << std::endl;
+                    std::ofstream file_writer{"caminho_minimo_dijkstra.txt"};
+
+                    if (caminho_minimo_dijkstra.size() > 0) {
+                        file_writer << caminho_minimo_dijkstra[0];
+                        for (int i = 1; i < caminho_minimo_dijkstra.size(); i++) {
+                            file_writer << "," << caminho_minimo_dijkstra[i];
+                        }
+                    }
+                    file_writer << "\n";
+
+                    file_writer.close();
                 }
 
                 break;
@@ -119,15 +135,13 @@ void Gerenciador::comandos(std::unique_ptr<Grafo> grafo) {
 
                 if (tam > 0 && tam <= grafo->getOrdem()) {
                     std::vector<char> ids = getConjuntoIds(*grafo, tam);
-                    Grafo* arvore_geradora_minima_prim = grafo->arvoreGeradoraMinimaPrim(ids);
+                    std::unique_ptr<Grafo> arvore_geradora_minima_prim = grafo->arvoreGeradoraMinimaPrim(ids);
                     std::cout << "Metodo de impressao em tela nao implementado" << std::endl
                               << std::endl;
 
                     if (perguntaImprimirArquivo("agm_prim.txt")) {
                         std::cout << "Metodo de impressao em arquivo nao implementado" << std::endl;
                     }
-
-                    delete arvore_geradora_minima_prim;
 
                 } else {
                     std::cout << "Valor invalido" << std::endl;
@@ -143,15 +157,17 @@ void Gerenciador::comandos(std::unique_ptr<Grafo> grafo) {
 
                 if (tam > 0 && tam <= grafo->getOrdem()) {
                     std::vector<char> ids = getConjuntoIds(*grafo, tam);
-                    Grafo* arvore_geradora_minima_kruskal = grafo->arvoreGeradoraMinimaKruskal(ids);
-                    std::cout << "Metodo de impressao em tela nao implementado" << std::endl
-                              << std::endl;
+                    std::unique_ptr<Grafo> arvore_geradora_minima_kruskal = grafo->arvoreGeradoraMinimaKruskal(ids);
+
+                    arvore_geradora_minima_kruskal->printAdjacencyList();
 
                     if (perguntaImprimirArquivo("agm_kruskal.txt")) {
-                        std::cout << "Metodo de impressao em arquivo nao implementado" << std::endl;
-                    }
+                        std::ofstream file_writer{"agm_kruskal.txt"};
 
-                    delete arvore_geradora_minima_kruskal;
+                        file_writer << arvore_geradora_minima_kruskal->formattedAdjacencyList();
+
+                        file_writer.close();
+                    }
 
                 } else {
                     std::cout << "Valor invalido" << std::endl;
@@ -162,7 +178,7 @@ void Gerenciador::comandos(std::unique_ptr<Grafo> grafo) {
         case 'g':
             {
                 char id_no = getIdEntrada();
-                Grafo* arvore_caminhamento_profundidade = grafo->arvoreCaminhamentoProfundidade(id_no);
+                std::unique_ptr<Grafo> arvore_caminhamento_profundidade = grafo->arvoreCaminhamentoProfundidade(id_no);
                 std::cout << "Metodo de impressao em tela nao implementado" << std::endl
                           << std::endl;
 
@@ -170,7 +186,6 @@ void Gerenciador::comandos(std::unique_ptr<Grafo> grafo) {
                     std::cout << "Metodo de impressao em arquivo nao implementado" << std::endl;
                 }
 
-                delete arvore_caminhamento_profundidade;
                 break;
             }
         case 'h':
