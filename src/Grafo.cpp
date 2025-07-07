@@ -276,9 +276,11 @@ void Grafo::dijkstraShortestPathHelper(const std::tuple<char, int, bool, std::ve
     );
 
     for (auto &next_node : distance_to_node) {
-        if (!std::get<2>(next_node)) {                                        // checks if the node has already been travelled to
-            if (std::get<1>(next_node) >= std::numeric_limits<int>::max()) {  // checks if the node's distance is smaller than the int maximum (in this case representing infinity), if it isn't,
-                break;                                                        // that means that this graph isn't connected and it has reached all nodes that the starting node is connected to
+        if (!std::get<2>(next_node)) {  // checks if the node has already been travelled to
+            // checks if the node's distance is smaller than the int maximum (in this case representing infinity), if it isn't,
+            // that means that this graph isn't connected and it has reached all nodes that the starting node is connected to
+            if (std::get<1>(next_node) >= std::numeric_limits<int>::max()) {
+                break;
             }
 
             std::get<2>(next_node) = true;
@@ -340,9 +342,8 @@ std::unique_ptr<Grafo> Grafo::arvoreGeradoraMinimaKruskal(std::vector<char> ids_
             graph->createNode(std::get<2>(edge), std::get<3>(edge));
         }
 
-        auto minimum_path = graph->caminhoMinimoDijkstra(std::get<0>(edge), std::get<2>(edge));
-
-        if (minimum_path.empty()) {
+        auto direct_transitive_closure = graph->fechoTransitivoDireto(std::get<0>(edge));
+        if (std::find(direct_transitive_closure.begin(), direct_transitive_closure.end(), std::get<2>(edge)) == direct_transitive_closure.end()) {
             graph->createEdge(std::get<0>(edge), std::get<2>(edge), std::get<4>(edge));
         }
     }
