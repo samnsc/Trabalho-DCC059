@@ -118,11 +118,26 @@ void Gerenciador::comandos(std::unique_ptr<Grafo> grafo) {
                 char id_no_1 = getIdEntrada();
                 char id_no_2 = getIdEntrada();
                 std::vector<char> caminho_minimo_floyd = grafo->caminhoMinimoFloyd(id_no_1, id_no_2);
-                std::cout << "Metodo de impressao em tela nao implementado" << std::endl
-                          << std::endl;
+                if (caminho_minimo_floyd.size() > 0) {
+                    std::cout << caminho_minimo_floyd[0];
+                    for (int i = 1; i < caminho_minimo_floyd.size(); i++) {
+                        std::cout << "," << caminho_minimo_floyd[i];
+                    }
+                }
+                std::cout << "\n";
 
                 if (perguntaImprimirArquivo("caminho_minimo_floyd.txt")) {
-                    std::cout << "Metodo de impressao em arquivo nao implementado" << std::endl;
+                    std::ofstream file_writer{"caminho_minimo_floyd.txt"};
+
+                    if (caminho_minimo_floyd.size() > 0) {
+                        file_writer << caminho_minimo_floyd[0];
+                        for (int i = 1; i < caminho_minimo_floyd.size(); i++) {
+                            file_writer << "," << caminho_minimo_floyd[i];
+                        }
+                    }
+                    file_writer << "\n";
+
+                    file_writer.close();
                 }
 
                 break;

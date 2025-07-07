@@ -290,9 +290,69 @@ void Grafo::dijkstraShortestPathHelper(const std::tuple<char, int, bool, std::ve
     }
 }
 
-std::vector<char> Grafo::caminhoMinimoFloyd(char id_no_a, char id_no_b) {
-    std::cout << "Metodo nao implementado" << std::endl;
-    return {};
+std::vector<char> Grafo::caminhoMinimoFloyd(char id_no_a, char id_no_b) const {
+    auto distances = this->floydAllDistances();
+
+    if (distances[id_no_a].find(id_no_b) != distances[id_no_a].end()) {
+        return distances[id_no_a][id_no_b].second;
+    } else {
+        return {};
+    }
+}
+
+std::map<char, std::map<char, std::pair<int, std::vector<char>>>> Grafo::floydAllDistances() const {
+    if (!this->IN_PONDERADO_ARESTA) {
+        throw std::runtime_error("Tried finding the shortest path on an edge-unweighted graph.\n");
+    }
+
+    std::map<char, std::map<char, std::pair<int, std::vector<char>>>> distances;
+    std::vector<char> all_node_ids;
+
+    for (const auto &node : this->lista_adj) {
+        all_node_ids.push_back(node.first);
+        distances[node.first][node.first] = {0, {node.first}};  // sets the distance to itself to 0
+
+        for (const auto &edge : node.second->getArestas()) {
+            distances[node.first][edge->getIdNoAlvo()] = {edge->getPeso(), {node.first, edge->getIdNoAlvo()}};  // sets the distance to all of its direct neighbors
+        }
+    }
+
+    for (auto passing_through_node : all_node_ids) {
+        for (auto starting_node : all_node_ids) {
+            for (auto ending_node : all_node_ids) {
+                int current_distance;
+                if (distances[starting_node].find(ending_node) == distances[starting_node].end()) {  // checks if there is a path between both nodes
+                    current_distance = std::numeric_limits<int>::max();
+                } else {
+                    current_distance = distances[starting_node][ending_node].first;
+                }
+
+                int new_distance;
+                std::vector<char> new_path;
+                // checks if there is a path passing that goes from the starting node to the ending node while passing through the new node
+                // if there isn't there is no need to compare if the distances are bigger or not so we can just continue onto the next node
+                if (
+                    distances[starting_node].find(passing_through_node) == distances[starting_node].end() ||
+                    distances[passing_through_node].find(ending_node) == distances[passing_through_node].end()
+                ) {
+                    continue;
+                } else {
+                    new_distance = distances[starting_node][passing_through_node].first + distances[passing_through_node][ending_node].first;
+
+                    // sets the new path by summing both paths together
+                    new_path.assign(distances[starting_node][passing_through_node].second.begin(), distances[starting_node][passing_through_node].second.end());
+                    // the start iterator is moved up one space to prevent the passing_through_node id from being duplicated, since it will always end one path and start the other
+                    new_path.insert(new_path.end(), (distances[passing_through_node][ending_node].second.begin() + 1), distances[passing_through_node][ending_node].second.end());
+                }
+
+                if (new_distance < current_distance) {
+                    distances[starting_node][ending_node] = {new_distance, new_path};
+                }
+            }
+        }
+    }
+
+    return distances;
 }
 
 std::unique_ptr<Grafo> Grafo::arvoreGeradoraMinimaPrim(std::vector<char> ids_nos) {
