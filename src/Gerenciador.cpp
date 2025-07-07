@@ -193,27 +193,71 @@ void Gerenciador::comandos(std::unique_ptr<Grafo> grafo) {
             {
                 char id_no = getIdEntrada();
                 std::unique_ptr<Grafo> arvore_caminhamento_profundidade = grafo->arvoreCaminhamentoProfundidade(id_no);
-                std::cout << "Metodo de impressao em tela nao implementado" << std::endl
-                          << std::endl;
+
+                arvore_caminhamento_profundidade->printAdjacencyList();
 
                 if (perguntaImprimirArquivo("arvore_caminhamento_profundidade.txt")) {
-                    std::cout << "Metodo de impressao em arquivo nao implementado" << std::endl;
+                    std::ofstream file_writer{"arvore_caminhamento_profundidade.txt"};
+
+                    file_writer << arvore_caminhamento_profundidade->formattedAdjacencyList();
+
+                    file_writer.close();
                 }
+
+                arvore_caminhamento_profundidade->printGraph();
 
                 break;
             }
         case 'h':
             {
-                int raio = grafo->raio();
-                int diametro = grafo->diametro();
-                std::vector<char> centro = grafo->centro();
-                std::vector<char> periferia = grafo->periferia();
+                auto eccentricities = grafo->getEccentricities();
+                int raio = grafo->raio(eccentricities);
+                int diametro = grafo->diametro(eccentricities);
+                std::vector<char> centro = grafo->centro(eccentricities);
+                std::vector<char> periferia = grafo->periferia(eccentricities);
 
-                std::cout << "Metodo de impressao em tela nao implementado" << std::endl
-                          << std::endl;
+                std::cout << raio << "\n"
+                          << diametro << "\n";
+
+                if (centro.size() > 0) {
+                    std::cout << centro[0];
+                    for (int i = 1; i < centro.size(); i++) {
+                        std::cout << "," << centro[i];
+                    }
+                }
+                std::cout << "\n";
+
+                if (periferia.size() > 0) {
+                    std::cout << periferia[0];
+                    for (int i = 1; i < periferia.size(); i++) {
+                        std::cout << "," << periferia[i];
+                    }
+                }
+                std::cout << "\n";
 
                 if (perguntaImprimirArquivo("raio_diametro_centro_periferia.txt")) {
-                    std::cout << "Metodo de impressao em arquivo nao implementado" << std::endl;
+                    std::ofstream file_writer{"raio_diametro_centro_periferia.txt"};
+
+                    file_writer << raio << "\n"
+                                << diametro << "\n";
+
+                    if (centro.size() > 0) {
+                        file_writer << centro[0];
+                        for (int i = 1; i < centro.size(); i++) {
+                            file_writer << "," << centro[i];
+                        }
+                    }
+                    file_writer << "\n";
+
+                    if (periferia.size() > 0) {
+                        file_writer << periferia[0];
+                        for (int i = 1; i < periferia.size(); i++) {
+                            file_writer << "," << periferia[i];
+                        }
+                    }
+                    file_writer << "\n";
+
+                    file_writer.close();
                 }
 
                 break;

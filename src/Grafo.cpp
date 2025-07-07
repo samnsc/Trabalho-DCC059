@@ -301,10 +301,6 @@ std::vector<char> Grafo::caminhoMinimoFloyd(char id_no_a, char id_no_b) const {
 }
 
 std::map<char, std::map<char, std::pair<int, std::vector<char>>>> Grafo::floydAllDistances() const {
-    if (!this->IN_PONDERADO_ARESTA) {
-        throw std::runtime_error("Tried finding the shortest path on an edge-unweighted graph.\n");
-    }
-
     std::map<char, std::map<char, std::pair<int, std::vector<char>>>> distances;
     std::vector<char> all_node_ids;
 
@@ -360,7 +356,7 @@ std::unique_ptr<Grafo> Grafo::arvoreGeradoraMinimaPrim(std::vector<char> ids_nos
     return nullptr;
 }
 
-std::unique_ptr<Grafo> Grafo::arvoreGeradoraMinimaKruskal(std::vector<char> ids_nos) {
+std::unique_ptr<Grafo> Grafo::arvoreGeradoraMinimaKruskal(std::vector<char> ids_nos) const {
     if (!this->IN_PONDERADO_ARESTA || this->IN_DIRECIONADO) {
         throw std::runtime_error("Tried generating a minimum spanning tree on an edge-unweighted or directed graph.\n");
     }
@@ -451,27 +447,144 @@ std::vector<std::tuple<char, int, char, int, int>> Grafo::getEdges(const std::ve
     return edges;
 }
 
-std::unique_ptr<Grafo> Grafo::arvoreCaminhamentoProfundidade(char id_no) {
-    std::cout << "Metodo nao implementado" << std::endl;
-    return nullptr;
+std::unique_ptr<Grafo> Grafo::arvoreCaminhamentoProfundidade(char id_no) const {
+    auto graph = std::unique_ptr<Grafo>{new Grafo{false, false, false}};  // the resulting spanning tree is not directed nor weighted
+    std::map<char, bool> has_been_visited;
+
+    for (const auto &node : this->lista_adj) {
+        has_been_visited[node.first] = false;
+    }
+
+    graph->createNode(id_no);
+    this->depthFirstSearchHelper(id_no, has_been_visited, *graph);
+
+    return std::move(graph);
 }
 
-int Grafo::raio() {
-    std::cout << "Metodo nao implementado" << std::endl;
-    return 0;
+void Grafo::depthFirstSearchHelper(char node_id, std::map<char, bool> &has_been_visited, Grafo &graph) const {
+    has_been_visited[node_id] = true;
+
+    for (const auto &edge : this->lista_adj.at(node_id)->getArestas()) {
+        // creates node if it doesn't exist
+        if (graph.lista_adj.find(edge->getIdNoAlvo()) == graph.lista_adj.end()) {
+            graph.createNode(edge->getIdNoAlvo());
+        }
+
+        // creates an edge if it doesn't already exist
+        if (
+            std::find_if(
+                graph.lista_adj[node_id]->getArestas().begin(),
+                graph.lista_adj[node_id]->getArestas().end(),
+                [&edge](const std::unique_ptr<Aresta> &comparison_edge) {
+                    return comparison_edge->getIdNoAlvo() == edge->getIdNoAlvo();
+                }
+            ) == graph.lista_adj[node_id]->getArestas().end()
+        ) {
+            graph.createEdge(node_id, edge->getIdNoAlvo());
+        }
+
+        // checks if the node has already been visited
+        if (!has_been_visited[edge->getIdNoAlvo()]) {
+            this->depthFirstSearchHelper(edge->getIdNoAlvo(), has_been_visited, graph);
+        }
+    }
 }
 
-int Grafo::diametro() {
-    std::cout << "Metodo nao implementado" << std::endl;
-    return 0;
+std::map<char, int> Grafo::getEccentricities() const {
+    auto floyd = this->floydAllDistances();
+    std::map<char, int> eccentricities;
+
+    for (const auto &starting_node : floyd) {
+        eccentricities[starting_node.first] = std::numeric_limits<int>::min();
+
+        for (const auto &ending_node : floyd[starting_node.first]) {
+            if (ending_node.second.first > eccentricities[starting_node.first]) {
+                eccentricities[starting_node.first] = ending_node.second.first;
+            }
+        }
+    }
+
+    return eccentricities;
 }
 
-std::vector<char> Grafo::centro() {
-    std::cout << "Metodo nao implementado" << std::endl;
-    return {};
+int Grafo::raio() const {
+    auto eccentricities = this->getEccentricities();
+
+    return this->raio(eccentricities);
 }
 
-std::vector<char> Grafo::periferia() {
-    std::cout << "Metodo nao implementado" << std::endl;
-    return {};
+int Grafo::raio(const std::map<char, int> &eccentricities) const {
+    int minimum_eccentricity = std::numeric_limits<int>::max();
+
+    for (const auto &eccentricity : eccentricities) {
+        if (eccentricity.second != std::numeric_limits<int>::min() && eccentricity.second < minimum_eccentricity) {
+            minimum_eccentricity = eccentricity.second;
+        }
+    }
+
+    if (minimum_eccentricity != std::numeric_limits<int>::max()) {
+        return minimum_eccentricity;
+    } else {
+        throw std::runtime_error("Tried finding the radius of a disconnected graph.\n");
+    }
+}
+
+int Grafo::diametro() const {
+    auto eccentricities = this->getEccentricities();
+
+    return this->diametro(eccentricities);
+}
+
+int Grafo::diametro(const std::map<char, int> &eccentricities) const {
+    int maximum_eccentricity = std::numeric_limits<int>::min();
+
+    for (const auto &eccentricity : eccentricities) {
+        if (eccentricity.second > maximum_eccentricity) {
+            maximum_eccentricity = eccentricity.second;
+        }
+    }
+
+    if (maximum_eccentricity != std::numeric_limits<int>::min()) {
+        return maximum_eccentricity;
+    } else {
+        throw std::runtime_error("Tried finding the diameter of a disconnected graph.\n");
+    }
+}
+
+std::vector<char> Grafo::centro() const {
+    auto eccentricities = this->getEccentricities();
+
+    return this->centro(eccentricities);
+}
+
+std::vector<char> Grafo::centro(const std::map<char, int> &eccentricities) const {
+    std::vector<char> central_nodes;
+    auto radius = this->raio(eccentricities);
+
+    for (const auto &node : eccentricities) {
+        if (node.second == radius) {
+            central_nodes.push_back(node.first);
+        }
+    }
+
+    return central_nodes;
+}
+
+std::vector<char> Grafo::periferia() const {
+    auto eccentricities = this->getEccentricities();
+
+    return this->periferia(eccentricities);
+}
+
+std::vector<char> Grafo::periferia(const std::map<char, int> &eccentricities) const {
+    std::vector<char> peripheral_nodes;
+    auto diameter = this->diametro(eccentricities);
+
+    for (const auto &node : eccentricities) {
+        if (node.second == diameter) {
+            peripheral_nodes.push_back(node.first);
+        }
+    }
+
+    return peripheral_nodes;
 }

@@ -12,8 +12,8 @@ class Grafo {
     public:
         Grafo(bool is_directed, bool has_weighted_edges, bool has_weighted_nodes);
 
-        void createNode(char id, int weight = 0);
-        void createEdge(char starting_id, char destination_id, int weight = 0);
+        void createNode(char id, int weight = 1);
+        void createEdge(char starting_id, char destination_id, int weight = 1);
 
         const std::map<char, std::unique_ptr<No>>& getListaDeAdjacencia() const;
         int getOrdem() const;
@@ -22,18 +22,23 @@ class Grafo {
         void printAdjacencyList() const;
         std::string formattedAdjacencyList() const;
 
-        std::vector<char> fechoTransitivoDireto(char id_no) const;                      // a
-        std::vector<char> fechoTransitivoIndireto(char id_no) const;                    // b
-        std::vector<char> caminhoMinimoDijkstra(char id_no_a, char id_no_b) const;      // c
-        std::vector<char> caminhoMinimoFloyd(char id_no_a, char id_no_b) const;         // d
-        std::unique_ptr<Grafo> arvoreGeradoraMinimaPrim(std::vector<char> ids_nos);     // e
-        std::unique_ptr<Grafo> arvoreGeradoraMinimaKruskal(std::vector<char> ids_nos);  // f
-        std::unique_ptr<Grafo> arvoreCaminhamentoProfundidade(char id_no);              // g
+        std::vector<char> fechoTransitivoDireto(char id_no) const;                            // a
+        std::vector<char> fechoTransitivoIndireto(char id_no) const;                          // b
+        std::vector<char> caminhoMinimoDijkstra(char id_no_a, char id_no_b) const;            // c
+        std::vector<char> caminhoMinimoFloyd(char id_no_a, char id_no_b) const;               // d
+        std::unique_ptr<Grafo> arvoreGeradoraMinimaPrim(std::vector<char> ids_nos);           // e
+        std::unique_ptr<Grafo> arvoreGeradoraMinimaKruskal(std::vector<char> ids_nos) const;  // f
+        std::unique_ptr<Grafo> arvoreCaminhamentoProfundidade(char id_no) const;              // g
 
-        int raio();                     // h 1
-        int diametro();                 // h 2
-        std::vector<char> centro();     // h 3
-        std::vector<char> periferia();  // h 4
+        std::map<char, int> getEccentricities() const;
+        int raio() const;                                                              // h 1
+        int raio(const std::map<char, int>& eccentricities) const;                     // h 1
+        int diametro() const;                                                          // h 2
+        int diametro(const std::map<char, int>& eccentricities) const;                 // h 2
+        std::vector<char> centro() const;                                              // h 3
+        std::vector<char> centro(const std::map<char, int>& eccentricities) const;     // h 3
+        std::vector<char> periferia() const;                                           // h 4
+        std::vector<char> periferia(const std::map<char, int>& eccentricities) const;  // h 4
 
     private:
         const bool IN_DIRECIONADO;
@@ -48,6 +53,7 @@ class Grafo {
         void dijkstraShortestPathHelper(const std::tuple<char, int, bool, std::vector<char>>& current_node, int summed_distance, std::vector<std::tuple<char, int, bool, std::vector<char>>>& distance_to_node) const;
         std::map<char, std::map<char, std::pair<int, std::vector<char>>>> floydAllDistances() const;
         std::vector<std::tuple<char, int, char, int, int>> getEdges(const std::vector<char>& node_ids) const;
+        void depthFirstSearchHelper(char node_id, std::map<char, bool>& has_been_visited, Grafo& graph) const;
 };
 
 #endif
