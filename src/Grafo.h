@@ -26,7 +26,7 @@ class Grafo {
         std::vector<char> fechoTransitivoIndireto(char id_no) const;                          // b
         std::vector<char> caminhoMinimoDijkstra(char id_no_a, char id_no_b) const;            // c
         std::vector<char> caminhoMinimoFloyd(char id_no_a, char id_no_b) const;               // d
-        std::unique_ptr<Grafo> arvoreGeradoraMinimaPrim(std::vector<char> ids_nos);           // e
+        std::unique_ptr<Grafo> arvoreGeradoraMinimaPrim(std::vector<char> ids_nos) const;     // e
         std::unique_ptr<Grafo> arvoreGeradoraMinimaKruskal(std::vector<char> ids_nos) const;  // f
         std::unique_ptr<Grafo> arvoreCaminhamentoProfundidade(char id_no) const;              // g
 

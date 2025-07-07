@@ -151,13 +151,16 @@ void Gerenciador::comandos(std::unique_ptr<Grafo> grafo) {
                 if (tam > 0 && tam <= grafo->getOrdem()) {
                     std::vector<char> ids = getConjuntoIds(*grafo, tam);
                     std::unique_ptr<Grafo> arvore_geradora_minima_prim = grafo->arvoreGeradoraMinimaPrim(ids);
-                    std::cout << "Metodo de impressao em tela nao implementado" << std::endl
-                              << std::endl;
+
+                    arvore_geradora_minima_prim->printAdjacencyList();
 
                     if (perguntaImprimirArquivo("agm_prim.txt")) {
-                        std::cout << "Metodo de impressao em arquivo nao implementado" << std::endl;
-                    }
+                        std::ofstream file_writer{"agm_prim.txt"};
 
+                        file_writer << arvore_geradora_minima_prim->formattedAdjacencyList();
+
+                        file_writer.close();
+                    }
                 } else {
                     std::cout << "Valor invalido" << std::endl;
                 }
@@ -210,6 +213,8 @@ void Gerenciador::comandos(std::unique_ptr<Grafo> grafo) {
             }
         case 'h':
             {
+                // the eccentricities are passed as parameters to the functions to increase performance
+                // however a version that doesn't require this argument has also been implemented
                 auto eccentricities = grafo->getEccentricities();
                 int raio = grafo->raio(eccentricities);
                 int diametro = grafo->diametro(eccentricities);

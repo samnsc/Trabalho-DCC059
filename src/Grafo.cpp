@@ -5,6 +5,7 @@
 #include <limits>
 #include <map>
 #include <memory>
+#include <set>
 #include <sstream>
 #include <stdexcept>
 #include <vector>
@@ -351,9 +352,107 @@ std::map<char, std::map<char, std::pair<int, std::vector<char>>>> Grafo::floydAl
     return distances;
 }
 
-std::unique_ptr<Grafo> Grafo::arvoreGeradoraMinimaPrim(std::vector<char> ids_nos) {
-    std::cout << "Metodo nao implementado" << std::endl;
-    return nullptr;
+std::unique_ptr<Grafo> Grafo::arvoreGeradoraMinimaPrim(std::vector<char> ids_nos) const {
+    if (!this->IN_PONDERADO_ARESTA || this->IN_DIRECIONADO) {
+        throw std::runtime_error("Tried generating a minimum spanning tree on an edge-unweighted or directed graph.\n");
+    }
+
+    if (ids_nos.empty()) {
+        return std::unique_ptr<Grafo>{new Grafo{this->IN_DIRECIONADO, this->IN_PONDERADO_ARESTA, this->IN_PONDERADO_VERTICE}};
+    }
+
+    // this checks if all of the nodes selected for the minimum spanning tree are connected, if they aren't its not possible to make a
+    // minimum spanning tree out of these nodes, since a minimum spanning tree can only be made on an undirected graph we only need
+    // to check if node is connected to the rest, if it is that means all of the other ones also are, if it isn't that means that these
+    // nodes can't form a connected graph
+    auto direct_transitive_closure = this->fechoTransitivoDireto(ids_nos[0]);
+    for (auto node_id : ids_nos) {
+        if (std::find(direct_transitive_closure.begin(), direct_transitive_closure.end(), node_id) == direct_transitive_closure.end()) {
+            throw std::runtime_error("Tried generating a minimum spanning tree while not all nodes on the graph are connected.\n");
+        }
+    }
+
+    auto edges = this->getEdges(ids_nos);
+
+    std::sort(  // sorts the list of edges
+        edges.begin(),
+        edges.end(),
+        [](const std::tuple<char, int, char, int, int> &first, const std::tuple<char, int, char, int, int> &second) {  // sorts the vector by each edge's weight
+            return std::get<4>(first) < std::get<4>(second);
+        }
+    );
+
+    auto graph = std::unique_ptr<Grafo>{new Grafo{this->IN_DIRECIONADO, this->IN_PONDERADO_ARESTA, this->IN_PONDERADO_VERTICE}};
+    std::set<char> to_visit{ids_nos.begin(), ids_nos.end()};
+
+    // start with the cheapest edge
+    graph->createNode(std::get<0>(edges[0]), std::get<1>(edges[0]));
+    graph->createNode(std::get<2>(edges[0]), std::get<3>(edges[0]));
+    graph->createEdge(std::get<0>(edges[0]), std::get<2>(edges[0]), std::get<4>(edges[0]));
+    to_visit.erase(std::get<0>(edges[0]));
+    to_visit.erase(std::get<2>(edges[0]));
+
+    std::map<char, std::tuple<char, int, char, int, int>> cheapest_edge;
+
+    // fill cheapest_edge with all of the neighbors from one of the nodes
+    for (const auto &edge : this->lista_adj.at(std::get<0>(edges[0]))->getArestas()) {
+        cheapest_edge[edge->getIdNoAlvo()] = {
+            edge->getIdNoAlvo(), this->lista_adj.at(edge->getIdNoAlvo())->getPeso(),
+            std::get<0>(edges[0]), std::get<1>(edges[0]),
+            edge->getPeso()
+        };
+    }
+
+    // fill cheapest_edge with the neighbors from the other node that weren't already part of the map or
+    // that are cheaper than with the previous node
+    for (const auto &edge : this->lista_adj.at(std::get<2>(edges[0]))->getArestas()) {
+        if (
+            cheapest_edge.find(edge->getIdNoAlvo()) == cheapest_edge.end() ||
+            edge->getPeso() < std::get<4>(cheapest_edge.at(edge->getIdNoAlvo()))
+        ) {
+            cheapest_edge[edge->getIdNoAlvo()] = {
+                edge->getIdNoAlvo(), this->lista_adj.at(edge->getIdNoAlvo())->getPeso(),
+                std::get<2>(edges[0]), std::get<3>(edges[0]),
+                edge->getPeso()
+            };
+        }
+    }
+
+    while (!to_visit.empty()) {
+        char currently_cheapest_node_id = *to_visit.begin();  // select any random node just to start with, if its not actually the cheapest it will get substituted
+
+        // checks all nodes that are yet to be visited and selects the cheapest one
+        for (auto node_id : to_visit) {
+            if (
+                cheapest_edge.find(node_id) != cheapest_edge.end() &&
+                (cheapest_edge.find(currently_cheapest_node_id) == cheapest_edge.end() ||  // this is a failsafe in case the randomly selected node cannot currently be connected to the graph
+                 std::get<4>(cheapest_edge.at(node_id)) < std::get<4>(cheapest_edge.at(currently_cheapest_node_id)))
+            ) {
+                currently_cheapest_node_id = node_id;
+            }
+        }
+
+        // creates the new node and edge and removes it from the to_visit set
+        graph->createNode(currently_cheapest_node_id, std::get<1>(cheapest_edge.at(currently_cheapest_node_id)));
+        graph->createEdge(currently_cheapest_node_id, std::get<2>(cheapest_edge.at(currently_cheapest_node_id)), std::get<4>(cheapest_edge.at(currently_cheapest_node_id)));
+        to_visit.erase(currently_cheapest_node_id);
+
+        // checks if any of the new edges are cheaper than the currently stored ones
+        for (const auto &edge : this->lista_adj.at(currently_cheapest_node_id)->getArestas()) {
+            if (
+                cheapest_edge.find(edge->getIdNoAlvo()) == cheapest_edge.end() ||
+                edge->getPeso() < std::get<4>(cheapest_edge.at(edge->getIdNoAlvo()))
+            ) {
+                cheapest_edge[edge->getIdNoAlvo()] = {
+                    edge->getIdNoAlvo(), this->lista_adj.at(edge->getIdNoAlvo())->getPeso(),
+                    currently_cheapest_node_id, std::get<1>(cheapest_edge.at(currently_cheapest_node_id)),
+                    edge->getPeso()
+                };
+            }
+        }
+    }
+
+    return std::move(graph);
 }
 
 std::unique_ptr<Grafo> Grafo::arvoreGeradoraMinimaKruskal(std::vector<char> ids_nos) const {
