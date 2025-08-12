@@ -1,0 +1,27 @@
+Para executar o programa o seguinte comando deve ser utilizado:
+
+./execGrupoX <arquivo_entrada>
+
+Em seguida deve-se escolher uma das 3 opções de algoritmos:
+
+(i) Algoritmo guloso para um conjunto dominante de arestas;
+(j) Algoritmo guloso randomizado adaptativo para um conjunto dominante de arestas;
+(k) Algoritmo guloso randomizado adaptativo reativo para um conjunto dominante de arestas;
+
+Para a primeira opção nenhuma outra informação será requisitada.
+Para a segunda opção será necessário informar o valor de alfa, assim como a quantidade de iterações.
+Para a terceira opção será necessário informar a quantidade de valores de alfa que serão utilizados, quais serão estes valores, a quantidade de iteração para o algoritmo reativo e a quantidade de iterações para o algoritmo randomizado.
+
+Após a execução todas as 3 opções iram imprimir na tela, em ordem:
+
+o tempo de execução em microsegundos
+o tamanho do conjunto de arestas dominantes
+todos os membros do conjunto da aresta dominante na seguinte ordem:
+    vértice de origem, peso do vértice de origem, vértice de destino, peso do vértice de destino, peso da aresta
+se os resultados encontrados formam um conjunto dominante válido ou não
+
+Em seguida também será perguntado se é desejado imprimir em um arquivo externo. Cada uma das opções imprimirá nos respectivos arquivos:
+
+algoritmo_guloso.txt
+algoritmo_guloso_randomizado.txt
+algoritmo_guloso_randomizado_reativo.txt

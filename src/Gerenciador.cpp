@@ -298,7 +298,7 @@ void Gerenciador::comandos(std::unique_ptr<Grafo> grafo) {
                 if (gulosos.checkResultValidity(results)) {
                     std::cout << "Resultado encontrado é válido!\n";
                 } else {
-                    throw std::runtime_error("Resultado encontrado é inválido!\n");
+                    std::cout << "Resultado encontrado é inválido!\n";
                 }
 
                 std::cout << "\n";
@@ -366,7 +366,7 @@ void Gerenciador::comandos(std::unique_ptr<Grafo> grafo) {
                 if (gulosos.checkResultValidity(results)) {
                     std::cout << "Resultado encontrado é válido!\n";
                 } else {
-                    throw std::runtime_error("Resultado encontrado é inválido!\n");
+                    std::cout << "Resultado encontrado é inválido!\n";
                 }
 
                 std::cout << "\n";
@@ -456,7 +456,7 @@ void Gerenciador::comandos(std::unique_ptr<Grafo> grafo) {
                     if (gulosos.checkResultValidity(results)) {
                         std::cout << "Resultado encontrado é válido!\n";
                     } else {
-                        throw std::runtime_error("Resultado encontrado é inválido!\n");
+                        std::cout << "Resultado encontrado é inválido!\n";
                     }
 
                     std::cout << "\n";
