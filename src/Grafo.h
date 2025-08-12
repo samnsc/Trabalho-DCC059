@@ -40,6 +40,10 @@ class Grafo {
         std::vector<char> periferia() const;                                           // h 4
         std::vector<char> periferia(const std::map<char, int>& eccentricities) const;  // h 4
 
+        std::vector<std::tuple<char, int, char, int, int>> getEdges() const;
+        std::vector<std::tuple<char, int, char, int, int>> getEdges(const std::vector<char>& node_ids) const;
+        std::vector<std::pair<std::tuple<char, int, char, int, int>, int>> getSortedEdgeVector() const;
+
     private:
         const bool IN_DIRECIONADO;
         const bool IN_PONDERADO_ARESTA;
@@ -52,7 +56,6 @@ class Grafo {
         bool indirectTransitiveClosureHelper(char target_node_id, const std::unique_ptr<No>& current_node, const std::vector<char>& indirect_transitive_closure, const std::vector<char>& cant_reach_target_node, std::vector<char>& scoured_nodes) const;
         void dijkstraShortestPathHelper(const std::tuple<char, int, bool, std::vector<char>>& current_node, int summed_distance, std::vector<std::tuple<char, int, bool, std::vector<char>>>& distance_to_node) const;
         std::map<char, std::map<char, std::pair<int, std::vector<char>>>> floydAllDistances() const;
-        std::vector<std::tuple<char, int, char, int, int>> getEdges(const std::vector<char>& node_ids) const;
         void depthFirstSearchHelper(char node_id, std::map<char, bool>& has_been_visited, Grafo& graph) const;
 };
 

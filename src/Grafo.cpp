@@ -687,3 +687,56 @@ std::vector<char> Grafo::periferia(const std::map<char, int> &eccentricities) co
 
     return peripheral_nodes;
 }
+
+std::vector<std::tuple<char, int, char, int, int>> Grafo::getEdges() const {
+    std::vector<char> keys;
+    for (const auto &node_id : this->lista_adj) {
+        keys.push_back(node_id.first);
+    }
+
+    return this->getEdges(keys);
+}
+
+// modified version of the getEdges helper function, returning a vector of a pair of tuples
+// ordered based on the sum of the degrees of the nodes on each end of the respective edge
+// each part of the pair of tuples represents, respectively:
+// {
+//  {first node's id, first node's weight, second node's id, second node's weight, edge's weight}, // tuple values
+//  sum of the degrees of the nodes on each end of the respective edge
+// }
+std::vector<std::pair<std::tuple<char, int, char, int, int>, int>> Grafo::getSortedEdgeVector() const {
+    std::vector<std::pair<std::tuple<char, int, char, int, int>, int>> edges;
+
+    std::map<char, std::vector<char>> included_edges;
+    for (const auto &node : this->lista_adj) {
+        auto &current_node_included_list = included_edges[node.first];
+
+        for (const auto &edge : node.second->getArestas()) {
+            auto destination_position_in_included_edges = std::find(current_node_included_list.begin(), current_node_included_list.end(), edge->getIdNoAlvo());
+
+            // this initially checks if the graph is directed, if it is there are no duplicate edges to be removed, so the second condition isn't checked
+            // if it's not directed it then checks if the destination node doesn't exist in the already included edges vector to prevent duplicate edges from being included (i.e. (a, b) and (b, a))
+            if (this->IN_DIRECIONADO || destination_position_in_included_edges == current_node_included_list.end()) {
+                edges.push_back(
+                    {{node.first, node.second->getPeso(),
+                      edge->getIdNoAlvo(), this->lista_adj.at(edge->getIdNoAlvo())->getPeso(),
+                      edge->getPeso()},
+                     int(node.second->getArestas().size() + this->lista_adj.at(edge->getIdNoAlvo())->getArestas().size())
+                    }
+                );
+                included_edges[edge->getIdNoAlvo()].push_back(node.first);
+            } else {
+                // this instance is erased because there can be multiple edges that have the same starting and destination nodes,
+                // if it wasn't erased they would be collpased into a single edge when printing
+                current_node_included_list.erase(destination_position_in_included_edges);
+            }
+        }
+    }
+
+    // sorts the list of edges in descending order
+    std::sort(edges.begin(), edges.end(), [](const auto &first, const auto &second) {
+        return first.second > second.second;
+    });
+
+    return edges;
+}

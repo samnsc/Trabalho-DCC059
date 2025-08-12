@@ -2,11 +2,14 @@
 
 #include <algorithm>
 #include <array>
+#include <chrono>
 #include <fstream>
 #include <iostream>
+#include <stdexcept>
 #include <vector>
 
 #include "Grafo.h"
+#include "Gulosos.h"
 
 void Gerenciador::comandos(std::unique_ptr<Grafo> grafo) {
     std::cout << "Digite uma das opcoes abaixo e pressione enter:" << std::endl
@@ -19,6 +22,9 @@ void Gerenciador::comandos(std::unique_ptr<Grafo> grafo) {
     std::cout << "(f) Arvore Geradora Minima (Algoritmo de Kruskal);" << std::endl;
     std::cout << "(g) Arvore de caminhamento em profundidade;" << std::endl;
     std::cout << "(h) Raio, diametro, centro e periferia do grafo;" << std::endl;
+    std::cout << "(i) Algoritmo guloso para um conjunto dominante de arestas;" << std::endl;
+    std::cout << "(j) Algoritmo guloso randomizado adaptativo para um conjunto dominante de arestas;" << std::endl;
+    std::cout << "(k) Algoritmo guloso randomizado adaptativo reativo para um conjunto dominante de arestas;" << std::endl;
     std::cout << "(0) Sair;" << std::endl
               << std::endl;
 
@@ -266,6 +272,213 @@ void Gerenciador::comandos(std::unique_ptr<Grafo> grafo) {
                 }
 
                 break;
+            }
+        case 'i':
+            {
+                std::cout << "\n";
+
+                auto gulosos = Gulosos(grafo.get());
+
+                auto processing_start = std::chrono::high_resolution_clock::now();
+
+                auto results = gulosos.greedyEdgeDominatingSet();
+
+                auto processing_end = std::chrono::high_resolution_clock::now();
+                auto simulation_duration = std::chrono::duration_cast<std::chrono::microseconds>(processing_end - processing_start);
+
+                std::cout << simulation_duration.count() << "μs" << "\n";
+                std::cout << results.size() << "\n";
+
+                for (auto result : results) {
+                    std::cout << std::get<0>(result) << " " << std::get<1>(result) << " " << std::get<2>(result) << " " << std::get<3>(result) << " " << std::get<4>(result) << "\n";
+                }
+
+                std::cout << "\n";
+
+                if (gulosos.checkResultValidity(results)) {
+                    std::cout << "Resultado encontrado é válido!\n";
+                } else {
+                    throw std::runtime_error("Resultado encontrado é inválido!\n");
+                }
+
+                std::cout << "\n";
+
+                if (perguntaImprimirArquivo("algoritmo_guloso.txt")) {
+                    std::ofstream file_writer{"algoritmo_guloso.txt"};
+
+                    for (auto result : results) {
+                        file_writer << std::get<0>(result) << " "
+                                    << std::get<1>(result) << " "
+                                    << std::get<2>(result) << " "
+                                    << std::get<3>(result) << " "
+                                    << std::get<4>(result) << "\n";
+                    }
+
+                    file_writer.close();
+                }
+
+                std::cout << "\n";
+
+                break;
+            }
+        case 'j':
+            {
+                auto gulosos = Gulosos(grafo.get());
+
+                float alpha;
+                std::cout << "Digite o valor de alpha: ";
+                std::cin >> alpha;
+
+                if (alpha > 1 || alpha < 0) {
+                    throw std::runtime_error("Invalid alpha value.\n");
+                }
+
+                unsigned int iteration_amount;
+                std::cout << "Digite a quantidade de iterações: ";
+                std::cin >> iteration_amount;
+
+                if (iteration_amount <= 0) {
+                    throw std::runtime_error("Invalid iteration amount.\n");
+                }
+
+                unsigned int seed;
+                std::cout << "Digite a seed: ";
+                std::cin >> seed;
+
+                std::cout << "\n";
+
+                auto processing_start = std::chrono::high_resolution_clock::now();
+
+                auto results = gulosos.greedyRandomizedAdaptiveEdgeDominatingSet(alpha, iteration_amount, seed);
+
+                auto processing_end = std::chrono::high_resolution_clock::now();
+                auto simulation_duration = std::chrono::duration_cast<std::chrono::microseconds>(processing_end - processing_start);
+
+                std::cout << simulation_duration.count() << "μs" << "\n";
+                std::cout << results.size() << "\n";
+
+                for (auto result : results) {
+                    std::cout << std::get<0>(result) << " " << std::get<1>(result) << " " << std::get<2>(result) << " " << std::get<3>(result) << " " << std::get<4>(result) << "\n";
+                }
+
+                std::cout << "\n";
+
+                if (gulosos.checkResultValidity(results)) {
+                    std::cout << "Resultado encontrado é válido!\n";
+                } else {
+                    throw std::runtime_error("Resultado encontrado é inválido!\n");
+                }
+
+                std::cout << "\n";
+
+                if (perguntaImprimirArquivo("algoritmo_guloso_randomizado.txt")) {
+                    std::ofstream file_writer{"algoritmo_guloso_randomizado.txt"};
+
+                    for (auto result : results) {
+                        file_writer << std::get<0>(result) << " "
+                                    << std::get<1>(result) << " "
+                                    << std::get<2>(result) << " "
+                                    << std::get<3>(result) << " "
+                                    << std::get<4>(result) << "\n";
+                    }
+
+                    file_writer.close();
+                }
+
+                std::cout << "\n";
+
+                break;
+            }
+        case 'k':
+            {
+                {
+                    auto gulosos = Gulosos(grafo.get());
+
+                    unsigned int alpha_amount;
+                    std::cout << "Digite a quantidade de valores de alpha: ";
+                    std::cin >> alpha_amount;
+
+                    if (alpha_amount <= 0) {
+                        throw std::runtime_error("Invalid alpha amount.\n");
+                    }
+
+                    std::vector<float> alpha_values;
+                    for (int i = 0; i < alpha_amount; i++) {
+                        float alpha;
+                        std::cout << "Digite o " << i + 1 << "º valor de alpha: ";
+                        std::cin >> alpha;
+
+                        if (alpha > 1 || alpha < 0) {
+                            throw std::runtime_error("Invalid alpha value.\n");
+                        }
+
+                        alpha_values.push_back(alpha);
+                    }
+
+                    unsigned int reactive_iteration_amount;
+                    std::cout << "Digite a quantidade de iterações do reativo: ";
+                    std::cin >> reactive_iteration_amount;
+
+                    if (reactive_iteration_amount <= 0) {
+                        throw std::runtime_error("Invalid iteration amount.\n");
+                    }
+
+                    unsigned int randomized_iteration_amount;
+                    std::cout << "Digite a quantidade de iterações do randomizado: ";
+                    std::cin >> randomized_iteration_amount;
+
+                    if (randomized_iteration_amount <= 0) {
+                        throw std::runtime_error("Invalid iteration amount.\n");
+                    }
+
+                    unsigned int seed;
+                    std::cout << "Digite a seed: ";
+                    std::cin >> seed;
+
+                    std::cout << "\n";
+
+                    auto processing_start = std::chrono::high_resolution_clock::now();
+
+                    auto results = gulosos.greedyRandomizedAdaptiveReactiveEdgeDominatingSet(alpha_values, reactive_iteration_amount, randomized_iteration_amount, seed);
+
+                    auto processing_end = std::chrono::high_resolution_clock::now();
+                    auto simulation_duration = std::chrono::duration_cast<std::chrono::microseconds>(processing_end - processing_start);
+
+                    std::cout << simulation_duration.count() << "μs" << "\n";
+                    std::cout << results.size() << "\n";
+
+                    for (auto result : results) {
+                        std::cout << std::get<0>(result) << " " << std::get<1>(result) << " " << std::get<2>(result) << " " << std::get<3>(result) << " " << std::get<4>(result) << "\n";
+                    }
+
+                    std::cout << "\n";
+
+                    if (gulosos.checkResultValidity(results)) {
+                        std::cout << "Resultado encontrado é válido!\n";
+                    } else {
+                        throw std::runtime_error("Resultado encontrado é inválido!\n");
+                    }
+
+                    std::cout << "\n";
+
+                    if (perguntaImprimirArquivo("algoritmo_guloso_randomizado_reativo.txt")) {
+                        std::ofstream file_writer{"algoritmo_guloso_randomizado_reativo.txt"};
+
+                        for (auto result : results) {
+                            file_writer << std::get<0>(result) << " "
+                                        << std::get<1>(result) << " "
+                                        << std::get<2>(result) << " "
+                                        << std::get<3>(result) << " "
+                                        << std::get<4>(result) << "\n";
+                        }
+
+                        file_writer.close();
+                    }
+
+                    std::cout << "\n";
+
+                    break;
+                }
             }
         case '0':
             {
